@@ -1,13 +1,28 @@
+import com.beust.jcommander.JCommander;
+
 import java.io.BufferedReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.List;
 
 public class Main {
     public static void main(String[] args) {
+
+
+        CFTFilterArgs jArgs = new CFTFilterArgs();
+        JCommander filterCmd = JCommander.newBuilder()
+                .addObject(jArgs)
+                .build();
+        filterCmd.parse(args);
+
+        System.out.println("Input files: " + jArgs.getInputFiles());
+        System.out.println("Prefix: " + jArgs.getPrefix());
+        System.out.println("Output path: " + jArgs.getOutput());
+        System.out.println("Adding mode enabled: " + jArgs.addModeEnabled());
+        System.out.println("Short stats enabled: " + jArgs.shortStatsModeEnabled());
+        System.out.println("Full stats enabled: " + jArgs.fullStatsModeEnabled());
+
 
         BufferedReader[] readers = new BufferedReader[args.length];
 
