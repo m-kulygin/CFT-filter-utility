@@ -30,11 +30,11 @@ public class Main {
                 BufferedReader reader = Files.newBufferedReader(Paths.get(
                         "C:\\Users\\Maximus\\Desktop\\work\\SHIFT Java\\Task\\CFT-filter-utility\\files\\input\\input.txt"));
                 FileWriter integerWriter = new FileWriter(  // можно ДОБАВЛЯТЬ в файл, применив в конструкторе append
-                        "C:\\Users\\Maximus\\Desktop\\work\\SHIFT Java\\Task\\CFT-filter-utility\\files\\output\\integers.txt");
+                        "integers1.txt");
                 FileWriter floatWriter = new FileWriter(  // можно ДОБАВЛЯТЬ в файл, применив в конструкторе append
-                        "C:\\Users\\Maximus\\Desktop\\work\\SHIFT Java\\Task\\CFT-filter-utility\\files\\output\\floats.txt");
+                        "floats1.txt");
                 FileWriter stringWriter = new FileWriter(  // можно ДОБАВЛЯТЬ в файл, применив в конструкторе append
-                        "C:\\Users\\Maximus\\Desktop\\work\\SHIFT Java\\Task\\CFT-filter-utility\\files\\output\\strings.txt")
+                        "strings1.txt")
         ) {
             String line;
             while ((line = reader.readLine()) != null) {
