@@ -88,6 +88,7 @@ public class CFTFilterArgs {
         public void validate(String name, String value) throws ParameterException {
 //            System.out.println("OUTPUT PATH VALIDATING: " + value);
             File file = new File(value);
+            // ?????? точно ли эта папка должна существовать
             if (!(file.exists() && file.isDirectory())) {
                 throw new ParameterException("Parameter " + name + " should be a correct path (found " + value + ")");
             }
