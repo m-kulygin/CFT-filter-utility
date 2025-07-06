@@ -18,26 +18,29 @@ public class Main {
         JCommander filterCmd = JCommander.newBuilder()
                 .addObject(jArgs)
                 .build();
-        filterCmd.parse(args);
+        try {
+            // разобраться с дефолтными значениями, если не удалось распарсить
+            filterCmd.parse(args);
+        } catch (Exception e) {}
 
         System.out.println();
         System.out.println("Input files: " + jArgs.getInputFiles());
         System.out.println("Prefix: " + jArgs.getPrefix());
         System.out.println("Output path: " + jArgs.getOutput());
-        System.out.println("Adding mode enabled: " + jArgs.addModeEnabled());
-        System.out.println("Short stats enabled: " + jArgs.shortStatsModeEnabled());
-        System.out.println("Full stats enabled: " + jArgs.fullStatsModeEnabled());
+        System.out.println("Adding mode enabled: " + jArgs.addModeEnabled()); // +
+        System.out.println("Short stats enabled: " + jArgs.shortStatsModeEnabled()); // +
+        System.out.println("Full stats enabled: " + jArgs.fullStatsModeEnabled()); // +
         System.out.println();
 
+        String fullIntegerFileName = jArgs.getPrefix() != null ? jArgs.getPrefix() + "integers.txt" : "integers.txt";
+        String fullFloatFileName = jArgs.getPrefix() != null ? jArgs.getPrefix() + "floats.txt" : "floats.txt";
+        String fullStringFileName = jArgs.getPrefix() != null ? jArgs.getPrefix() + "strings.txt" : "strings.txt";
+        String actualAbsolutePath = new File(jArgs.getOutput()).getAbsolutePath() + File.separator;
+        fullIntegerFileName = actualAbsolutePath + fullIntegerFileName;
+        fullFloatFileName = actualAbsolutePath + fullFloatFileName;
+        fullStringFileName = actualAbsolutePath + fullStringFileName;
+        // ?????? писать в дефолт????
 
-        BufferedReader[] readers = new BufferedReader[args.length];
-
-        String fullIntegerFileName = jArgs.getPrefix() != null ? jArgs.getPrefix()+"integers.txt" : "integers.txt";
-        String fullFloatFileName = jArgs.getPrefix() != null ? jArgs.getPrefix()+"floats.txt" : "floats.txt";
-        String fullStringFileName = jArgs.getPrefix() != null ? jArgs.getPrefix()+"strings.txt" : "strings.txt";
-        fullIntegerFileName = jArgs.getOutput() != null ? jArgs.getOutput()+fullIntegerFileName : fullIntegerFileName;
-        fullFloatFileName = jArgs.getOutput() != null ? jArgs.getOutput()+fullFloatFileName : fullFloatFileName;
-        fullStringFileName = jArgs.getOutput() != null ? jArgs.getOutput()+fullStringFileName : fullStringFileName;
 
         List<String> validInputFiles = new ArrayList<>();
         for (String name : jArgs.getInputFiles()) {
@@ -55,9 +58,6 @@ public class Main {
         }
 
         FilterStats stats = new FilterStats();
-        FileWriter integerWriter = null;
-        FileWriter floatWriter = null;
-        FileWriter stringWriter = null;
 
         // ВРОДЕ БЫ на этом этапе у нас корректные префикс и выходной путь. надо разобраться,
         // существуют или нет такие выходные файлы, и можем ли мы в них писать.
@@ -69,100 +69,68 @@ public class Main {
 //        FileWriter stringWriter = new FileWriter(  // можно ДОБАВЛЯТЬ в файл, применив в конструкторе append
 //                fullStringFileName)
 
-        for (String inputFile : validInputFiles) {
-            try (
-                    BufferedReader reader = Files.newBufferedReader(Paths.get(inputFile))
-            ) {
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    // НУЖНО УЧЕСТЬ NFE/ARIPHM И ДРУГИЕ. ЕСЛИ ВЫЛЕТАЕТ - СКИПАЕМ ЭТУ СТРОКУ.
-                    // НОРМАЛЬНЫЕ ЛИ РЕГУЛЯРКИ? ^$ нужны? хочу чтобы регулярки полностью соответствовали парсингу BigInt/BigDec
-                    if (line.matches("^[+-]?\\d+$")) { // целые
-                        BigInteger num = new BigInteger(line);
-                        stats.updateIntegerFullStats(num);
-                        try {
-                            if (stats.integerCount == 0) {
-                                integerWriter = new FileWriter(fullIntegerFileName);
-                            }
-                            stats.integerCount++;
-                            integerWriter.write(line);
-                            integerWriter.write(System.lineSeparator());
-                            integerWriter.flush();
-                        } catch (IOException e) {
-                            System.out.println("Error while writing to file: " + inputFile);
-                        }
 
-                    } else if (line.matches("[+-]?(\\d+(\\.\\d*)?|\\.\\d+)([eE][+-]?\\d+)?")) { // флоат
-                        BigDecimal num = new BigDecimal(line);
-                        stats.updateFloatFullStats(num);
-                        try {
-                            if (stats.floatCount == 0) {
-                                floatWriter = new FileWriter(fullFloatFileName);
+        try (
+                OutputIntegerWriter integerWriter = new OutputIntegerWriter(fullIntegerFileName, jArgs.addModeEnabled());
+                OutputFloatWriter floatWriter = new OutputFloatWriter(fullFloatFileName, jArgs.addModeEnabled());
+                OutputStringWriter stringWriter = new OutputStringWriter(fullStringFileName, jArgs.addModeEnabled());
+        ) {
+            for (String inputFile : validInputFiles) {
+                try (BufferedReader reader = Files.newBufferedReader(Paths.get(inputFile))) {
+                    String line;
+                    while ((line = reader.readLine()) != null) {
+                        // НУЖНО УЧЕСТЬ NFE/ARIPHM И ДРУГИЕ. ЕСЛИ ВЫЛЕТАЕТ - СКИПАЕМ ТОЛЬКО ТЕКУЩУЮ СТРОКУ.
+                        if (line.matches("[+-]?\\d+")) { // целые
+                            BigInteger num = new BigInteger(line);
+                            if (jArgs.fullStatsModeEnabled())
+                                stats.updateIntegerFullStats(num);
+                            try {
+                                integerWriter.writeIntegerToFile(line);
+                                stats.integerCount++;
+                            } catch (IOException e) {
+                                System.out.println("Error while writing to file: " + inputFile);
                             }
-                            stats.floatCount++;
-                            floatWriter.write(line);
-                            floatWriter.write(System.lineSeparator());
-                            floatWriter.flush();
-                        } catch (IOException e) {
-                            System.out.println("Error while writing to file: " + inputFile);
-                        }
 
-                    } else { // строки
-                        stats.updateStringFullStats(line);
-                        try {
-                            if (stats.stringCount == 0) {
-                                stringWriter = new FileWriter(fullStringFileName);
+                        } else if (line.matches("[+-]?(\\d+(\\.\\d*)?|\\.\\d+)([eE][+-]?\\d+)?")) { // флоат
+                            BigDecimal num = new BigDecimal(line);
+                            if (jArgs.fullStatsModeEnabled())
+                                stats.updateFloatFullStats(num);
+                            try {
+                                floatWriter.writeFloatToFile(line);
+                                stats.floatCount++;
+                            } catch (IOException e) {
+                                System.out.println("Error while writing to file: " + inputFile);
                             }
-                            stats.stringCount++;
-                            stringWriter.write(line);
-                            stringWriter.write(System.lineSeparator());
-                            stringWriter.flush();
-                        } catch (IOException e) {
-                            System.out.println("Error while writing to file: " + inputFile);
+
+                        } else { // строки
+                            if (jArgs.fullStatsModeEnabled())
+                                stats.updateStringFullStats(line);
+                            try {
+                                stringWriter.writeStringToFile(line);
+                                stats.stringCount++;
+                            } catch (IOException e) {
+                                System.out.println("Error while writing to file: " + inputFile);
+                            }
                         }
                     }
+                } catch (IOException e) {
+                    System.out.println("Error while reading input file: " + inputFile);
                 }
-
-            } catch (IOException e) {
-                System.err.println("Ошибка при работе с файлами: " + e.getMessage());
             }
-        }
-
-        try {
-            if (integerWriter != null) {
-                integerWriter.close();
+        } catch (Exception e) {
+            System.err.println("Error while writing to output: " + e.getMessage());
+        } finally {
+            if (jArgs.fullStatsModeEnabled()) {
+                stats.countIntegerAverage();
+                stats.countFloatAverage();
+                System.out.println(stats.getFullStats());
+            } else if (jArgs.shortStatsModeEnabled()) {
+                System.out.println(stats.getShortStats());
             }
-        } catch (IOException e) {
-            System.out.println("Error while closing file: " + fullIntegerFileName);
-        }
-
-        try {
-            if (floatWriter != null) {
-                floatWriter.close();
-            }
-        } catch (IOException e) {
-            System.out.println("Error while closing file: " + fullFloatFileName);
-        }
-
-        try {
-            if (stringWriter != null) {
-                stringWriter.close();
-            }
-        } catch (IOException e) {
-            System.out.println("Error while closing file: " + fullStringFileName);
-        }
-
-        if (jArgs.fullStatsModeEnabled()) {
-            stats.countIntegerAverage();
-            stats.countFloatAverage();
-            System.out.println(stats.getFullStats());
-        } else if (jArgs.shortStatsModeEnabled()) {
-            System.out.println(stats.getShortStats());
         }
         System.out.println("Filter worked successfully");
 
     }
-
 
 
 }
