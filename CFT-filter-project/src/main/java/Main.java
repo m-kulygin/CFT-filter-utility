@@ -1,75 +1,93 @@
 import com.beust.jcommander.JCommander;
+import com.beust.jcommander.ParameterDescription;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.math.RoundingMode;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.nio.file.StandardOpenOption;
-import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 public class Main {
     public static void main(String[] args) {
 
-        // НАВЕСИТЬ ТРАЙ КЕТЧ, ЕСЛИ ПРОБЛЕМА С АРГУМЕНТАМИ И ВАЛИДАЦИЕЙ
         CFTFilterArgs jArgs = new CFTFilterArgs();
         JCommander filterCmd = JCommander.newBuilder()
                 .addObject(jArgs)
                 .build();
         try {
-            // разобраться с дефолтными значениями, если не удалось распарсить
             filterCmd.parse(args);
-        } catch (Exception e) {}
+        } catch (Exception e) {
+            System.out.println("Args parsing error: " + e.getMessage());
+        }
 
-        System.out.println();
-        System.out.println("Input files: " + jArgs.getInputFiles());
-        System.out.println("Prefix: " + jArgs.getPrefix());
-        System.out.println("Output path: " + jArgs.getOutput());
-        System.out.println("Adding mode enabled: " + jArgs.addModeEnabled()); // +
-        System.out.println("Short stats enabled: " + jArgs.shortStatsModeEnabled()); // +
-        System.out.println("Full stats enabled: " + jArgs.fullStatsModeEnabled()); // +
-        System.out.println();
-
-        String fullIntegerFileName = jArgs.getPrefix() != null ? jArgs.getPrefix() + "integers.txt" : "integers.txt";
-        String fullFloatFileName = jArgs.getPrefix() != null ? jArgs.getPrefix() + "floats.txt" : "floats.txt";
-        String fullStringFileName = jArgs.getPrefix() != null ? jArgs.getPrefix() + "strings.txt" : "strings.txt";
-        String actualAbsolutePath = new File(jArgs.getOutput()).getAbsolutePath() + File.separator;
-        fullIntegerFileName = actualAbsolutePath + fullIntegerFileName;
-        fullFloatFileName = actualAbsolutePath + fullFloatFileName;
-        fullStringFileName = actualAbsolutePath + fullStringFileName;
-        // ?????? писать в дефолт????
+//        System.out.println();
+//        System.out.println("Input files: " + jArgs.getInputFiles()); +
+//        System.out.println("Prefix: " + jArgs.getPrefix()); +
+//        System.out.println("Output path: " + jArgs.getOutput()); +
+//        System.out.println("Adding mode enabled: " + jArgs.addModeEnabled()); // +
+//        System.out.println("Short stats enabled: " + jArgs.shortStatsModeEnabled()); // +
+//        System.out.println("Full stats enabled: " + jArgs.fullStatsModeEnabled()); // +
+//        System.out.println();
 
 
-        List<String> validInputFiles = new ArrayList<>();
-        for (String name : jArgs.getInputFiles()) {
-            File file = new File(name);
-            if ((file.exists()) && (file.isFile()) && (file.canRead())) {
-                validInputFiles.add(name);
+        List<String> validInputFiles;
+        try {
+            validInputFiles = FilterArgsChecker.checkAndFillValidInputFiles(jArgs.getInputFiles());
+        } catch (IOException e) {
+            System.out.println(e.getMessage());
+            System.out.println("Terminating utility work.");
+            return;
+        }
+
+        List<ParameterDescription> parsedParams = filterCmd.getParameters();
+        for (var p : parsedParams)
+            System.out.println(p.getNames() + " " + p.isAssigned());
+        String fullIntegerFileName = "integers.txt";
+        String fullFloatFileName = "floats.txt";
+        String fullStringFileName = "strings.txt";
+
+        Optional<ParameterDescription> prefixParam = parsedParams.stream()
+                .filter(p -> p.getNames().equals("-p"))
+                .findFirst();
+        if ((prefixParam.isPresent()) && (prefixParam.get().isAssigned())) {
+            if (FilterArgsChecker.isValidPrefix(jArgs.getPrefix())) {
+                fullIntegerFileName = jArgs.getPrefix() + fullIntegerFileName;
+                fullFloatFileName = jArgs.getPrefix() + fullFloatFileName;
+                fullStringFileName = jArgs.getPrefix() + fullStringFileName;
             } else {
-                System.out.println("Input file " + name + " not found");
+                System.out.println("Invalid prefix. Should be a non-blank correct file prefix, but found: " + jArgs.getPrefix());
             }
         }
-        if (validInputFiles.isEmpty()) {
-            System.out.println("No valid input files found. Terminating utility work. " +
-                    "Please specify at least one valid input file.");
+
+        Optional<ParameterDescription> outputPathParam = parsedParams.stream()
+                .filter(p -> p.getNames().equals("-o"))
+                .findFirst();
+        if ((outputPathParam.isPresent()) && (outputPathParam.get().isAssigned())) {
+            if (FilterArgsChecker.isValidOutputPath(jArgs.getOutput())) {
+                String actualAbsolutePath = new File(jArgs.getOutput()).getAbsolutePath() + File.separator;
+                fullIntegerFileName = actualAbsolutePath + fullIntegerFileName;
+                fullFloatFileName = actualAbsolutePath + fullFloatFileName;
+                fullStringFileName = actualAbsolutePath + fullStringFileName;
+            } else {
+                System.out.println("Invalid output path. Should be a correct existing path," +
+                        "representing a writable directory, but found: " + jArgs.getOutput());
+            }
+        }
+
+        try {
+            fullIntegerFileName = makeOutputFileNameDefaultIfNeeded(fullIntegerFileName, "integers.txt");
+            fullFloatFileName = makeOutputFileNameDefaultIfNeeded(fullFloatFileName, "floats.txt");
+            fullStringFileName = makeOutputFileNameDefaultIfNeeded(fullStringFileName, "strings.txt");
+        } catch (IOException e) {
+            System.out.println(e.getMessage());
             return;
         }
 
         FilterStats stats = new FilterStats();
-
-        // ВРОДЕ БЫ на этом этапе у нас корректные префикс и выходной путь. надо разобраться,
-        // существуют или нет такие выходные файлы, и можем ли мы в них писать.
-        // ЕСЛИ ПРОБЛЕМА С КАСТОМНЫМИ ИМЕНАМИ - ПЫТАЕМСЯ ПИСАТЬ В ДЕФОЛТ
-//        FileWriter integerWriter = new FileWriter(  // можно ДОБАВЛЯТЬ в файл, применив в конструкторе append
-//                fullIntegerFileName);
-//        FileWriter floatWriter = new FileWriter(  // можно ДОБАВЛЯТЬ в файл, применив в конструкторе append
-//                fullFloatFileName);
-//        FileWriter stringWriter = new FileWriter(  // можно ДОБАВЛЯТЬ в файл, применив в конструкторе append
-//                fullStringFileName)
-
-
         try (
                 OutputIntegerWriter integerWriter = new OutputIntegerWriter(fullIntegerFileName, jArgs.addModeEnabled());
                 OutputFloatWriter floatWriter = new OutputFloatWriter(fullFloatFileName, jArgs.addModeEnabled());
@@ -88,7 +106,7 @@ public class Main {
                                 integerWriter.writeIntegerToFile(line);
                                 stats.integerCount++;
                             } catch (IOException e) {
-                                System.out.println("Error while writing to file: " + inputFile);
+                                System.out.println("Error while writing to file: " + fullIntegerFileName);
                             }
 
                         } else if (line.matches("[+-]?(\\d+(\\.\\d*)?|\\.\\d+)([eE][+-]?\\d+)?")) { // флоат
@@ -99,7 +117,7 @@ public class Main {
                                 floatWriter.writeFloatToFile(line);
                                 stats.floatCount++;
                             } catch (IOException e) {
-                                System.out.println("Error while writing to file: " + inputFile);
+                                System.out.println("Error while writing to file: " + fullFloatFileName);
                             }
 
                         } else { // строки
@@ -109,7 +127,7 @@ public class Main {
                                 stringWriter.writeStringToFile(line);
                                 stats.stringCount++;
                             } catch (IOException e) {
-                                System.out.println("Error while writing to file: " + inputFile);
+                                System.out.println("Error while writing to file: " + fullStringFileName);
                             }
                         }
                     }
@@ -127,10 +145,24 @@ public class Main {
             } else if (jArgs.shortStatsModeEnabled()) {
                 System.out.println(stats.getShortStats());
             }
+            // !!!
         }
         System.out.println("Filter worked successfully");
 
     }
 
 
+    private static String makeOutputFileNameDefaultIfNeeded(String outputFilePath, String defaultFilePath)
+            throws IOException {
+        String result = outputFilePath;
+        if (FilterArgsChecker.isExistingNonWritableOutputFile(result)) {
+            System.out.println("Non-writable output file: " + result);
+            System.out.println("Attempting to write in default.");
+            result = defaultFilePath;
+            if (FilterArgsChecker.isExistingNonWritableOutputFile(result)) {
+                throw new IOException("Cannot write to default: " + result + "\nTerminating utility work.");
+            }
+        }
+        return result;
+    }
 }

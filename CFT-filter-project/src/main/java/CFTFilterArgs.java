@@ -1,20 +1,21 @@
-import com.beust.jcommander.IParameterValidator;
 import com.beust.jcommander.Parameter;
-import com.beust.jcommander.ParameterException;
 
-import java.io.File;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 public class CFTFilterArgs {
 
     @Parameter(
+            description = "Input files' names",
+            required = true
+    )
+    private List<String> inputFiles = new ArrayList<>();
+
+    @Parameter(
             names = "-p",
             description = "File name prefix",
             required = false,
-            arity = 1,
-            validateWith = PrefixValidator.class
+            arity = 1
     )
     private String prefix;
 
@@ -22,8 +23,7 @@ public class CFTFilterArgs {
             names = "-o",
             description = "Output files path",
             required = false,
-            arity = 1,
-            validateWith = OutputPathValidator.class
+            arity = 1
     )
     private String output;
 
@@ -51,13 +51,6 @@ public class CFTFilterArgs {
     )
     private boolean fullStatsMode;
 
-    @Parameter(
-            description = "Input files' names",
-            required = true
-    )
-    private List<String> inputFiles = new ArrayList<>();
-
-
     public String getPrefix() {
         return prefix;
     }
@@ -83,29 +76,4 @@ public class CFTFilterArgs {
     }
 
 
-    public static class OutputPathValidator implements IParameterValidator {
-        @Override
-        public void validate(String name, String value) throws ParameterException {
-            File file = new File(value);
-            if (!file.isDirectory()) {
-                throw new ParameterException("Parameter " + name + " should be a correct existing path," +
-                        " representing a directory (found " + value + ")");
-            }
-
-        }
-    }
-
-    public static class PrefixValidator implements IParameterValidator {
-        private static final Character[] ILLEGAL_CHARACTERS =
-                {'/', '\n', '\r', '\t', '\0', '\f', '`', '?', '*', '\\', '<', '>', '|', '\"', ':'};
-
-        @Override
-        public void validate(String name, String value) throws ParameterException {
-//            System.out.println("PREFIX VALIDATING: " + value);
-            if ((value == null) || (value.isBlank())
-                    || (Arrays.stream(ILLEGAL_CHARACTERS).anyMatch(ch -> value.contains(ch.toString())))) {
-                throw new ParameterException("Parameter " + name + " should be a non-blank correct prefix (found " + value + ")");
-            }
-        }
-    }
 }
