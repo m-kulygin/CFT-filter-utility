@@ -1,3 +1,5 @@
+package filter;
+
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.math.RoundingMode;
@@ -27,7 +29,9 @@ public class FilterStats {
     }
 
     public String getFullStats() {
-        return "\nFILTER STATS\n\n" +
+        countIntegerAverage();
+        countFloatAverage();
+        return "\nFILTER STATS (full)\n\n" +
                 "Integer count: " + integerCount + "\n" +
                 "Min integer: " + minInteger + "\n" +
                 "Max integer: " + maxInteger + "\n" +
@@ -44,7 +48,7 @@ public class FilterStats {
     }
 
     public String getShortStats() {
-        return "\nFILTER STATS\n" +
+        return "\nFILTER STATS (short)\n" +
                 "Integer count: " + integerCount + "\n" +
                 "Float count: " + floatCount + "\n" +
                 "String count: " + stringCount + "\n\n";
@@ -67,6 +71,7 @@ public class FilterStats {
                     .divide(new BigDecimal(integerCount), RoundingMode.HALF_UP);
         }
     }
+
     public void countFloatAverage() {
         if (floatCount != 0) {
             averageFloat = sumFloat
@@ -84,6 +89,7 @@ public class FilterStats {
         }
         sumFloat = sumFloat.add(floatValue);
     }
+
     public void updateStringFullStats(String stringValue) {
         if (stringCount == 0) { // если это первая строка
             shortestStringLength = stringValue.length();

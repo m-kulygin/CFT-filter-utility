@@ -1,3 +1,5 @@
+package filter;
+
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -19,7 +21,7 @@ public interface FilterArgsChecker {
             if ((file.exists()) && (file.isFile()) && (file.canRead())) {
                 validInputFileNames.add(inputFileName);
             } else {
-                System.out.println("Invalid input file: " + inputFileName);
+                System.err.println("Invalid input file: " + inputFileName);
             }
         }
         if (validInputFileNames.isEmpty()) {

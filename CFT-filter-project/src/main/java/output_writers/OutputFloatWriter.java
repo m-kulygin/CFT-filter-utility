@@ -1,21 +1,23 @@
+package output_writers;
+
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 
-public class OutputIntegerWriter implements AutoCloseable {
+public class OutputFloatWriter implements AutoCloseable {
     private BufferedWriter writer;
     private final String outputFileName;
     private final boolean appendModeEnabled;
 
-    public OutputIntegerWriter(String outputFileName, boolean appendModeEnabled) {
+    public OutputFloatWriter(String outputFileName, boolean appendModeEnabled) {
         writer = null;
         this.outputFileName = outputFileName;
         this.appendModeEnabled = appendModeEnabled;
     }
 
-    public void writeIntegerToFile(String integerLine) throws IOException {
+    public void writeFloatToFile(String floatLine) throws IOException {
         if (writer == null) {
             if (appendModeEnabled) {
                 writer = Files.newBufferedWriter(
@@ -31,11 +33,9 @@ public class OutputIntegerWriter implements AutoCloseable {
                         StandardOpenOption.WRITE,
                         StandardOpenOption.TRUNCATE_EXISTING
                 );
-
             }
-
         }
-        writer.write(integerLine);
+        writer.write(floatLine);
         writer.write(System.lineSeparator());
     }
 

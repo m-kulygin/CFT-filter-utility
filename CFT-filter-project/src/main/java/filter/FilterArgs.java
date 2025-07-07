@@ -1,9 +1,11 @@
+package filter;
+
 import com.beust.jcommander.Parameter;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class CFTFilterArgs {
+public class FilterArgs {
 
     @Parameter(
             description = "Input files' names",
