@@ -1,9 +1,17 @@
+package filter;
+
 import com.beust.jcommander.Parameter;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class CFTFilterArgs {
+public class FilterArgs {
+
+    @Parameter(
+            description = "Input files' names",
+            required = true
+    )
+    private List<String> inputFiles = new ArrayList<>();
 
     @Parameter(
             names = "-p",
@@ -45,30 +53,29 @@ public class CFTFilterArgs {
     )
     private boolean fullStatsMode;
 
-    @Parameter(
-            description = "Input files' names",
-            required = true
-    )
-    private List<String> inputFiles = new ArrayList<>();
-
-
-
     public String getPrefix() {
         return prefix;
     }
+
     public String getOutput() {
         return output;
     }
+
     public boolean addModeEnabled() {
         return addMode;
     }
+
     public boolean shortStatsModeEnabled() {
         return shortStatsMode;
     }
+
     public boolean fullStatsModeEnabled() {
         return fullStatsMode;
     }
+
     public List<String> getInputFiles() {
         return inputFiles;
     }
+
+
 }
