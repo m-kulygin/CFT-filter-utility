@@ -22,23 +22,22 @@ public class FilterMain {
     private static final String FLOAT_FILE_DEFAULT_NAME = "floats.txt";
     private static final String STRING_FILE_DEFAULT_NAME = "strings.txt";
 
-    FilterArgs jArgs;
-    JCommander filterCmd;
-    FilterStats stats;
+    private final JCommander filterCmd;
+    private FilterStats stats;
 
-    List<String> validInputFiles;
-    String prefix;
-    String outputPath;
-    boolean addModeEnabled;
-    boolean shortStatsModeEnabled;
-    boolean fullStatsModeEnabled;
+    private final List<String> validInputFiles;
+    private final String prefix;
+    private final String outputPath;
+    private final boolean addModeEnabled;
+    private final boolean shortStatsModeEnabled;
+    private final boolean fullStatsModeEnabled;
 
-    String fullIntegerFileName;
-    String fullFloatFileName;
-    String fullStringFileName;
+    private String fullIntegerFileName;
+    private String fullFloatFileName;
+    private String fullStringFileName;
 
     public FilterMain(String[] args) throws IOException {
-        jArgs = new FilterArgs();
+        FilterArgs jArgs = new FilterArgs();
         filterCmd = JCommander.newBuilder().addObject(jArgs).build();
         try {
             filterCmd.parse(args);
@@ -46,7 +45,7 @@ public class FilterMain {
             System.err.println("Args parsing error: " + e.getMessage());
         }
 
-        validInputFiles = FilterArgsChecker.checkAndFillValidInputFiles(jArgs.getInputFiles()); // !!!
+        validInputFiles = FilterArgsChecker.checkAndFillValidInputFiles(jArgs.getInputFiles());
 
         prefix = jArgs.getPrefix();
         outputPath = jArgs.getOutput();
@@ -60,9 +59,9 @@ public class FilterMain {
         parsePrefixAndUpdateOutputFilenames();
         parseOutputPathAndUpdateOutputFilenames();
 
-        fullIntegerFileName = makeOutputFileNameDefaultIfNeeded(fullIntegerFileName, INTEGER_FILE_DEFAULT_NAME); // !!!
-        fullFloatFileName = makeOutputFileNameDefaultIfNeeded(fullFloatFileName, FLOAT_FILE_DEFAULT_NAME); // !!!
-        fullStringFileName = makeOutputFileNameDefaultIfNeeded(fullStringFileName, STRING_FILE_DEFAULT_NAME); // !!!
+        fullIntegerFileName = makeOutputFileNameDefaultIfNeeded(fullIntegerFileName, INTEGER_FILE_DEFAULT_NAME);
+        fullFloatFileName = makeOutputFileNameDefaultIfNeeded(fullFloatFileName, FLOAT_FILE_DEFAULT_NAME);
+        fullStringFileName = makeOutputFileNameDefaultIfNeeded(fullStringFileName, STRING_FILE_DEFAULT_NAME);
     }
 
     public void doFilter() {
@@ -141,7 +140,7 @@ public class FilterMain {
                 fullFloatFileName = prefix + fullFloatFileName;
                 fullStringFileName = prefix + fullStringFileName;
             } else {
-                System.err.println("Invalid prefix. Should be a non-blank correct file prefix, but found: " + prefix);
+                System.err.println("Invalid prefix. Using empty now. Should be a non-blank correct file prefix, but found: " + prefix);
             }
         }
     }
@@ -157,7 +156,7 @@ public class FilterMain {
                 fullFloatFileName = actualAbsolutePath + fullFloatFileName;
                 fullStringFileName = actualAbsolutePath + fullStringFileName;
             } else {
-                System.err.println("Invalid output path. Should be a correct existing path," +
+                System.err.println("Invalid output path. Using default now. Should be a correct existing path, " +
                         "representing a writable directory, but found: " + outputPath);
             }
         }
@@ -170,7 +169,8 @@ public class FilterMain {
             System.err.println("Non-writable output file: " + result);
             System.err.println("Attempting to write in default.");
             result = defaultFilePath;
-            if (FilterArgsChecker.isExistingNonWritableOutputFile(result)) {
+            if (!(new File(System.getProperty("user.dir")).canWrite()) ||
+                    (FilterArgsChecker.isExistingNonWritableOutputFile(result))) {
                 throw new IOException("Cannot write to default: " + result);
             }
         }

@@ -31,20 +31,29 @@ public class FilterStats {
     public String getFullStats() {
         countIntegerAverage();
         countFloatAverage();
-        return "\nFILTER STATS (full)\n\n" +
-                "Integer count: " + integerCount + "\n" +
-                "Min integer: " + minInteger + "\n" +
-                "Max integer: " + maxInteger + "\n" +
-                "Sum integer: " + sumInteger + "\n" +
-                "Integer average: " + averageInteger + "\n" +
-                "\nFloat count: " + floatCount + "\n" +
-                "Min float: " + minFloat + "\n" +
-                "Max float: " + maxFloat + "\n" +
-                "Sum float: " + sumFloat + "\n" +
-                "Float average: " + averageFloat + "\n" +
-                "\nString count: " + stringCount + "\n" +
-                "Shortest string length: " + shortestStringLength + "\n" +
-                "Longest string length: " + longestStringLength + "\n\n";
+        StringBuilder result = new StringBuilder();
+        result.append("\nFILTER STATS (full)\n\nInteger count: ")
+                .append(integerCount).append("\n");
+        if (integerCount != 0) {
+            result.append("Min integer: ").append(new BigDecimal(minInteger)).append("\n")
+                    .append("Max integer: ").append(new BigDecimal(maxInteger)).append("\n")
+                    .append("Sum integer: ").append(new BigDecimal(sumInteger)).append("\n")
+                    .append("Integer average: ").append(averageInteger).append("\n");
+        }
+        result.append("\nFloat count: ").append(floatCount).append("\n");
+        if (floatCount != 0) {
+            result.append("Min float: ").append(minFloat).append("\n")
+                    .append("Max float: ").append(maxFloat).append("\n")
+                    .append("Sum float: ").append(sumFloat).append("\n")
+                    .append("Float average: ").append(averageFloat).append("\n");
+        }
+        result.append("\nString count: ").append(stringCount).append("\n");
+        if (stringCount != 0) {
+            result.append("Shortest string length: ").append(shortestStringLength).append("\n")
+                    .append("Longest string length: ").append(longestStringLength).append("\n");
+        }
+        result.append("\n");
+        return result.toString();
     }
 
     public String getShortStats() {
@@ -68,14 +77,19 @@ public class FilterStats {
     public void countIntegerAverage() {
         if (integerCount != 0) {
             averageInteger = new BigDecimal(sumInteger)
-                    .divide(new BigDecimal(integerCount), RoundingMode.HALF_UP);
+                    .divide(new BigDecimal(integerCount),
+                            String.valueOf(integerCount).length() + 2,
+                            RoundingMode.HALF_UP);
         }
     }
 
     public void countFloatAverage() {
         if (floatCount != 0) {
             averageFloat = sumFloat
-                    .divide(new BigDecimal(floatCount), RoundingMode.HALF_UP);
+                    .divide(new BigDecimal(floatCount),
+                            sumFloat.scale() + String.valueOf(floatCount).length() + 2,
+                            RoundingMode.HALF_UP);
+
         }
     }
 

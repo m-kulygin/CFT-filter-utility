@@ -54,7 +54,7 @@
                             </descriptorRefs>
                             <finalName>FilterUtility</finalName>
                             <appendAssemblyId>false</appendAssemblyId>
-<!--                            <outputDirectory>./jar</outputDirectory>-->
+                            <outputDirectory>./app</outputDirectory>
                             <archive>
                                 <manifest>
                                     <mainClass>Main</mainClass>
